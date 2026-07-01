@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>截圖左右轉上下工具</title>
+<title>截圖工具箱</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>截圖左右轉上下工具</h1>
-      <p class="desc">適用於左右並排的截圖,工具會將左半部放上方、右半部放下方。</p>
+      <h1>截圖工具箱</h1>
+      <p class="desc">左右並排的截圖可以轉成上下排列；單一頁面內容太小看不清楚，可以框選裁切放大。</p>
       <p class="privacy">圖片只會在你的瀏覽器中處理,不會上傳。</p>
     </header>
 
@@ -26,23 +26,45 @@
 
       <div id="errorMsg" class="error-msg" hidden></div>
 
-      <section class="preview-section">
-        <div class="preview-box">
-          <h2>原始圖片</h2>
-          <div class="preview-frame">
-            <img id="originalPreview" alt="原始圖片預覽">
-          </div>
+      <nav class="mode-tabs" id="modeTabs" hidden>
+        <button type="button" class="mode-tab active" data-mode="split">左右轉上下</button>
+        <button type="button" class="mode-tab" data-mode="crop">框選裁切放大</button>
+      </nav>
+
+      <section class="original-section" id="originalSection" hidden>
+        <h2>原始圖片</h2>
+        <p class="crop-hint" id="cropHint" hidden>在圖片上拖曳滑鼠(或手指)框選想放大的區域，再點下方「裁切並放大」。</p>
+        <div class="preview-frame crop-frame" id="cropFrame">
+          <img id="originalPreview" alt="原始圖片預覽">
+          <div class="selection-box" id="selectionBox" hidden></div>
         </div>
+      </section>
+
+      <section class="preview-section mode-panel" id="splitPanel" hidden>
         <div class="preview-box">
-          <h2>處理後圖片</h2>
+          <h2>處理後圖片(上下排列)</h2>
           <div class="preview-frame">
             <canvas id="resultCanvas"></canvas>
           </div>
         </div>
       </section>
 
-      <section class="action-section">
+      <section class="action-section mode-panel" id="splitAction" hidden>
         <button id="downloadBtn" disabled>下載處理後圖片</button>
+      </section>
+
+      <section class="preview-section mode-panel" id="cropPanel" hidden>
+        <div class="preview-box">
+          <h2>裁切放大結果</h2>
+          <div class="preview-frame">
+            <canvas id="cropResultCanvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="action-section mode-panel" id="cropAction" hidden>
+        <button id="cropBtn" disabled>裁切並放大選取區域</button>
+        <button id="cropDownloadBtn" disabled>下載裁切結果</button>
       </section>
     </main>
   </div>
