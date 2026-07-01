@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>截圖左右轉上下工具</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>截圖左右轉上下工具</h1>
+      <p class="desc">適用於左右並排的截圖,工具會將左半部放上方、右半部放下方。</p>
+      <p class="privacy">圖片只會在你的瀏覽器中處理,不會上傳。</p>
+    </header>
+
+    <main>
+      <section class="upload-section">
+        <label for="fileInput" class="upload-box" id="uploadBox">
+          <span class="upload-icon">📁</span>
+          <span class="upload-text">點擊選擇圖片</span>
+          <span class="upload-hint">支援 PNG、JPG、JPEG、WebP</span>
+        </label>
+        <input type="file" id="fileInput" accept="image/png, image/jpeg, image/webp" hidden>
+      </section>
+
+      <div id="errorMsg" class="error-msg" hidden></div>
+
+      <section class="preview-section">
+        <div class="preview-box">
+          <h2>原始圖片</h2>
+          <div class="preview-frame">
+            <img id="originalPreview" alt="原始圖片預覽">
+          </div>
+        </div>
+        <div class="preview-box">
+          <h2>處理後圖片</h2>
+          <div class="preview-frame">
+            <canvas id="resultCanvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="action-section">
+        <button id="downloadBtn" disabled>下載處理後圖片</button>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
