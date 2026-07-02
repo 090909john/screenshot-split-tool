@@ -12,7 +12,7 @@ body {
 .container {
   max-width: 960px;
   margin: 0 auto;
-  padding: 24px 16px 64px;
+  padding: 24px 16px 100px;
 }
 
 header {
@@ -263,11 +263,19 @@ h1 {
 }
 
 .action-section {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 24px;
+  margin: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
 }
 
 .action-section button {
@@ -311,5 +319,11 @@ h1 {
 
   .preview-box {
     flex: 1 1 100%;
+  }
+
+  .action-section button {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    flex: 1 1 auto;
   }
 }

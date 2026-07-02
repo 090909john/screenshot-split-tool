@@ -216,6 +216,14 @@ function finalizeSelection(box) {
 
 // ---- Free-draw selection ----
 
+// A touch that merely brushes the image while the user is trying to
+// scroll the page (to reach the action bar below) must NOT wipe out an
+// existing selection. So a new free-draw only "commits" (hides the old
+// box and starts drawing a new one) once the finger has moved past
+// DRAG_THRESHOLD px; a plain tap/scroll-start leaves the selection intact.
+const DRAG_THRESHOLD = 8;
+
+let pendingStart = null;
 let dragging = false;
 let dragStart = null;
 
@@ -240,24 +248,31 @@ function getPoint(e) {
 function onDragStart(e) {
   if (currentMode !== 'crop' || !currentImage) return;
   if (e.target.closest('.handle')) return;
-  const pt = getPoint(e);
-  dragging = true;
-  dragStart = pt;
-  selectionBox.hidden = false;
-  updateSelectionBox(pt, pt);
+  pendingStart = getPoint(e);
+  dragging = false;
 }
 
 function onDragMove(e) {
-  if (!dragging) return;
+  if (!pendingStart) return;
   const pt = getPoint(e);
+
+  if (!dragging) {
+    const dx = pt.x - pendingStart.x;
+    const dy = pt.y - pendingStart.y;
+    if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    dragging = true;
+    dragStart = pendingStart;
+    selectionBox.hidden = false;
+  }
+
   updateSelectionBox(dragStart, pt);
 }
 
 function onDragEnd() {
+  pendingStart = null;
   if (!dragging) return;
   dragging = false;
 
-  const bounds = getImageBoundsInFrame();
   const frameRect = cropFrame.getBoundingClientRect();
   const boxRect = selectionBox.getBoundingClientRect();
 
