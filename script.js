@@ -108,6 +108,10 @@ modeTabs.addEventListener('click', (e) => {
   currentMode = btn.dataset.mode;
   [...modeTabs.querySelectorAll('.mode-tab')].forEach((t) => t.classList.toggle('active', t === btn));
   applyMode();
+
+  if (currentMode === 'crop' && !selection && currentImage) {
+    applyPreset('middle-half');
+  }
 });
 
 function applyMode() {
@@ -295,8 +299,12 @@ cropPresets.addEventListener('click', (e) => {
     return;
   }
 
-  const range = PRESETS[presetBtn.dataset.preset];
-  if (!range) return;
+  applyPreset(presetBtn.dataset.preset);
+});
+
+function applyPreset(presetName) {
+  const range = PRESETS[presetName];
+  if (!range || !currentImage) return;
 
   const bounds = getImageBoundsInFrame();
   const [startFrac, endFrac] = range;
@@ -310,7 +318,7 @@ cropPresets.addEventListener('click', (e) => {
   selectionBox.hidden = false;
   setSelectionBoxStyle(box);
   finalizeSelection(box);
-});
+}
 
 // ---- Corner-handle resize (for one-handed fine-tuning) ----
 
