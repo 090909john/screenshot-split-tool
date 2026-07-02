@@ -147,6 +147,40 @@ h1 {
   border-radius: 8px;
 }
 
+.crop-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.preset-btn {
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.preset-btn:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.preset-btn.clear-btn {
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.preset-btn.clear-btn:hover {
+  background: #fef2f2;
+  border-color: #b91c1c;
+}
+
 .crop-frame {
   position: relative;
   user-select: none;
@@ -168,6 +202,24 @@ h1 {
   background: rgba(37, 99, 235, 0.15);
   pointer-events: none;
 }
+
+.handle {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.handle-nw { left: 0; top: 0; cursor: nwse-resize; }
+.handle-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.handle-sw { left: 0; top: 100%; cursor: nesw-resize; }
+.handle-se { left: 100%; top: 100%; cursor: nwse-resize; }
 
 .preview-section {
   display: flex;

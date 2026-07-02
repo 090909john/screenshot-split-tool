@@ -19,6 +19,8 @@ const cropAction = document.getElementById('cropAction');
 const cropResultCanvas = document.getElementById('cropResultCanvas');
 const cropBtn = document.getElementById('cropBtn');
 const cropDownloadBtn = document.getElementById('cropDownloadBtn');
+const cropPresets = document.getElementById('cropPresets');
+const clearSelectionBtn = document.getElementById('clearSelectionBtn');
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const MIN_WIDTH_FOR_SPLIT = 2;
@@ -115,6 +117,7 @@ function applyMode() {
   cropPanel.hidden = isSplit;
   cropAction.hidden = isSplit;
   cropHint.hidden = isSplit;
+  cropPresets.hidden = isSplit;
   cropFrame.classList.toggle('crop-active', !isSplit);
 }
 
@@ -160,6 +163,55 @@ downloadBtn.addEventListener('click', () => {
 
 // ---------- Crop mode ----------
 
+// All frame-relative helpers work in cropFrame's local coordinate space,
+// since selectionBox is positioned absolute within cropFrame (which is
+// wider than the centered image itself).
+
+function getImageBoundsInFrame() {
+  const imgRect = originalPreview.getBoundingClientRect();
+  const frameRect = cropFrame.getBoundingClientRect();
+  const left = imgRect.left - frameRect.left;
+  const top = imgRect.top - frameRect.top;
+  return { left, top, right: left + imgRect.width, bottom: top + imgRect.height, width: imgRect.width, height: imgRect.height };
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function setSelectionBoxStyle(box) {
+  selectionBox.style.left = `${box.left}px`;
+  selectionBox.style.top = `${box.top}px`;
+  selectionBox.style.width = `${box.width}px`;
+  selectionBox.style.height = `${box.height}px`;
+}
+
+// Converts a frame-relative box into natural image pixels, updates
+// `selection`, and enables/disables the crop button accordingly.
+function finalizeSelection(box) {
+  if (box.width < 4 || box.height < 4) {
+    selectionBox.hidden = true;
+    selection = null;
+    cropBtn.disabled = true;
+    return;
+  }
+
+  const bounds = getImageBoundsInFrame();
+  const scaleX = currentImage.naturalWidth / bounds.width;
+  const scaleY = currentImage.naturalHeight / bounds.height;
+
+  selection = {
+    x: Math.round((box.left - bounds.left) * scaleX),
+    y: Math.round((box.top - bounds.top) * scaleY),
+    width: Math.round(box.width * scaleX),
+    height: Math.round(box.height * scaleY),
+  };
+
+  cropBtn.disabled = false;
+}
+
+// ---- Free-draw selection ----
+
 let dragging = false;
 let dragStart = null;
 
@@ -171,24 +223,19 @@ window.addEventListener('mouseup', onDragEnd);
 window.addEventListener('touchend', onDragEnd);
 
 function getPoint(e) {
-  // Returned in cropFrame-relative coordinates (since selectionBox is
-  // positioned absolute within cropFrame, which is wider than the
-  // centered image), but clamped to the image's displayed bounds.
-  const imgRect = originalPreview.getBoundingClientRect();
+  const bounds = getImageBoundsInFrame();
   const frameRect = cropFrame.getBoundingClientRect();
   const source = e.touches ? e.touches[0] : e;
 
-  const imgLeft = imgRect.left - frameRect.left;
-  const imgTop = imgRect.top - frameRect.top;
-
   return {
-    x: clamp(source.clientX - frameRect.left, imgLeft, imgLeft + imgRect.width),
-    y: clamp(source.clientY - frameRect.top, imgTop, imgTop + imgRect.height),
+    x: clamp(source.clientX - frameRect.left, bounds.left, bounds.right),
+    y: clamp(source.clientY - frameRect.top, bounds.top, bounds.bottom),
   };
 }
 
 function onDragStart(e) {
   if (currentMode !== 'crop' || !currentImage) return;
+  if (e.target.closest('.handle')) return;
   const pt = getPoint(e);
   dragging = true;
   dragStart = pt;
@@ -206,30 +253,16 @@ function onDragEnd() {
   if (!dragging) return;
   dragging = false;
 
-  const rect = originalPreview.getBoundingClientRect();
+  const bounds = getImageBoundsInFrame();
+  const frameRect = cropFrame.getBoundingClientRect();
   const boxRect = selectionBox.getBoundingClientRect();
 
-  if (boxRect.width < 4 || boxRect.height < 4) {
-    selectionBox.hidden = true;
-    selection = null;
-    cropBtn.disabled = true;
-    return;
-  }
-
-  const scaleX = currentImage.naturalWidth / rect.width;
-  const scaleY = currentImage.naturalHeight / rect.height;
-
-  const left = boxRect.left - rect.left;
-  const top = boxRect.top - rect.top;
-
-  selection = {
-    x: Math.round(left * scaleX),
-    y: Math.round(top * scaleY),
-    width: Math.round(boxRect.width * scaleX),
-    height: Math.round(boxRect.height * scaleY),
-  };
-
-  cropBtn.disabled = false;
+  finalizeSelection({
+    left: boxRect.left - frameRect.left,
+    top: boxRect.top - frameRect.top,
+    width: boxRect.width,
+    height: boxRect.height,
+  });
 }
 
 function updateSelectionBox(start, current) {
@@ -237,15 +270,102 @@ function updateSelectionBox(start, current) {
   const y = Math.min(start.y, current.y);
   const width = Math.abs(current.x - start.x);
   const height = Math.abs(current.y - start.y);
-
-  selectionBox.style.left = `${x}px`;
-  selectionBox.style.top = `${y}px`;
-  selectionBox.style.width = `${width}px`;
-  selectionBox.style.height = `${height}px`;
+  setSelectionBoxStyle({ left: x, top: y, width, height });
 }
 
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
+// ---- Preset quick-select ranges ----
+
+const PRESETS = {
+  'top-half': [0, 0.5],
+  'middle-half': [0.25, 0.75],
+  'bottom-half': [0.5, 1],
+  'top-third': [0, 1 / 3],
+  'middle-third': [1 / 3, 2 / 3],
+  'bottom-third': [2 / 3, 1],
+};
+
+cropPresets.addEventListener('click', (e) => {
+  const presetBtn = e.target.closest('.preset-btn');
+  if (!presetBtn || !currentImage) return;
+
+  if (presetBtn === clearSelectionBtn) {
+    selectionBox.hidden = true;
+    selection = null;
+    cropBtn.disabled = true;
+    return;
+  }
+
+  const range = PRESETS[presetBtn.dataset.preset];
+  if (!range) return;
+
+  const bounds = getImageBoundsInFrame();
+  const [startFrac, endFrac] = range;
+  const box = {
+    left: bounds.left,
+    top: bounds.top + bounds.height * startFrac,
+    width: bounds.width,
+    height: bounds.height * (endFrac - startFrac),
+  };
+
+  selectionBox.hidden = false;
+  setSelectionBoxStyle(box);
+  finalizeSelection(box);
+});
+
+// ---- Corner-handle resize (for one-handed fine-tuning) ----
+
+let resizingHandle = null;
+let resizeAnchor = null; // frame-relative point of the fixed opposite corner
+
+selectionBox.addEventListener('mousedown', onHandleDragStart);
+selectionBox.addEventListener('touchstart', onHandleDragStart, { passive: true });
+window.addEventListener('mousemove', onHandleDragMove);
+window.addEventListener('touchmove', onHandleDragMove, { passive: true });
+window.addEventListener('mouseup', onHandleDragEnd);
+window.addEventListener('touchend', onHandleDragEnd);
+
+function onHandleDragStart(e) {
+  const handle = e.target.closest('.handle');
+  if (!handle) return;
+
+  const boxRect = selectionBox.getBoundingClientRect();
+  const frameRect = cropFrame.getBoundingClientRect();
+  const left = boxRect.left - frameRect.left;
+  const top = boxRect.top - frameRect.top;
+
+  const corner = handle.dataset.handle;
+  resizeAnchor = {
+    x: corner.includes('w') ? left + boxRect.width : left,
+    y: corner.includes('n') ? top + boxRect.height : top,
+  };
+  resizingHandle = corner;
+}
+
+function onHandleDragMove(e) {
+  if (!resizingHandle) return;
+  const pt = getPoint(e);
+  const box = {
+    left: Math.min(resizeAnchor.x, pt.x),
+    top: Math.min(resizeAnchor.y, pt.y),
+    width: Math.abs(pt.x - resizeAnchor.x),
+    height: Math.abs(pt.y - resizeAnchor.y),
+  };
+  setSelectionBoxStyle(box);
+}
+
+function onHandleDragEnd() {
+  if (!resizingHandle) return;
+  resizingHandle = null;
+
+  const frameRect = cropFrame.getBoundingClientRect();
+  const boxRect = selectionBox.getBoundingClientRect();
+
+  finalizeSelection({
+    left: boxRect.left - frameRect.left,
+    top: boxRect.top - frameRect.top,
+    width: boxRect.width,
+    height: boxRect.height,
+  });
 }
 
 cropBtn.addEventListener('click', () => {

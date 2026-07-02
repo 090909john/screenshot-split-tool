@@ -33,10 +33,24 @@
 
       <section class="original-section" id="originalSection" hidden>
         <h2>原始圖片</h2>
-        <p class="crop-hint" id="cropHint" hidden>在圖片上拖曳滑鼠(或手指)框選想放大的區域，再點下方「裁切並放大」。</p>
+        <p class="crop-hint" id="cropHint" hidden>先點選下方常用範圍快速框選，再拖曳藍色圓點微調邊界；也可以直接在圖片上拖曳自由框選。</p>
+        <div class="crop-presets" id="cropPresets" hidden>
+          <button type="button" class="preset-btn" data-preset="top-half">上半部</button>
+          <button type="button" class="preset-btn" data-preset="middle-half">中間</button>
+          <button type="button" class="preset-btn" data-preset="bottom-half">下半部</button>
+          <button type="button" class="preset-btn" data-preset="top-third">上 1/3</button>
+          <button type="button" class="preset-btn" data-preset="middle-third">中 1/3</button>
+          <button type="button" class="preset-btn" data-preset="bottom-third">下 1/3</button>
+          <button type="button" class="preset-btn clear-btn" id="clearSelectionBtn">清除選取</button>
+        </div>
         <div class="preview-frame crop-frame" id="cropFrame">
           <img id="originalPreview" alt="原始圖片預覽">
-          <div class="selection-box" id="selectionBox" hidden></div>
+          <div class="selection-box" id="selectionBox" hidden>
+            <span class="handle handle-nw" data-handle="nw"></span>
+            <span class="handle handle-ne" data-handle="ne"></span>
+            <span class="handle handle-sw" data-handle="sw"></span>
+            <span class="handle handle-se" data-handle="se"></span>
+          </div>
         </div>
       </section>
 
